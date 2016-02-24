@@ -21,7 +21,7 @@ end
 @api_key = nil # Google API key
 @places = Hash.new # places hash
 
-def perform_query(client, &block)
+def perform_query(&block)
   results = nil
   while results == nil do
     begin
@@ -29,7 +29,7 @@ def perform_query(client, &block)
     rescue GooglePlaces::OverQueryLimitError, GooglePlaces::RequestDeniedError
       puts 'Api Key Invalidated. Provide new Api Key:'
       @api_key = STDIN.gets
-      client = GooglePlaces::Client.new(@api_key)
+      @client = GooglePlaces::Client.new(@api_key)
     end
   end
   results
@@ -43,7 +43,7 @@ puts 'Google Api Key:'
 
 CSV.foreach(@locations_file) do |row|
   puts "Processing city: #{row[0]}"
-  results = perform_query(@client) do
+  results = perform_query do
     @client.spots_by_query(@query, lat: row[1], lng: row[2], radius: 20000, multipage: true)
   end
   results.each do |spot|
@@ -55,7 +55,7 @@ end
 CSV.open('results.csv', 'w') do |csv|
   @places.each do |key, value|
     puts "Processing company: #{value[:name]} (at #{value[:city_query]})"
-    result = perform_query(@client) do
+    result = perform_query do
       @client.spot(key)
     end
     csv << [key, value[:name], value[:lat], value[:lng], value[:uuid], result.website, result.url, value[:city_query]]
